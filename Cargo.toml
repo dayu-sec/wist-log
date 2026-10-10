@@ -25,4 +25,4 @@ path = "src/lib.rs"
 
 [dev-dependencies]
 # 测试 `[log]` 段的反序列化。
-toml = "0.8"
+toml = "1.1"
