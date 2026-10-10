@@ -1,0 +1,28 @@
+[package]
+name = "wist-log"
+version = "0.1.0" #@gxl:set(version)
+edition = "2024"
+license = "Apache-2.0"
+authors = ["wist Dev Team"]
+description = "wist 统一日志输出：`log` 门面 + `env_logger` 后端，级别 / 格式 / 落点 / 轮转由 `[log]` 段决定。"
+repository = "https://github.com/dayu-sec/wist-log"
+homepage = "https://github.com/dayu-sec/wist-log"
+documentation = "https://docs.rs/wist-log"
+readme = "README.md"
+keywords = ["wist", "logging", "env_logger", "log"]
+categories = ["development-tools::debugging"]
+
+[dependencies]
+# 门面 + 后端：与 center / gateway / gwlinkd / agentd 一致（`log` 写、`env_logger` 收）。
+log = "0.4"
+env_logger = "0.11"
+# `[log]` 段反序列化 + `format = "json"` 的结构化行。
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[lib]
+path = "src/lib.rs"
+
+[dev-dependencies]
+# 测试 `[log]` 段的反序列化。
+toml = "0.8"
