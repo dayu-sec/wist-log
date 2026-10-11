@@ -32,9 +32,7 @@ pub struct LogSection {
 }
 
 /// 日志输出格式。
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogFormat {
     /// `<时间戳> <LEVEL> <target>: <message>`（缺省）。
@@ -137,7 +135,13 @@ mod tests {
             assert!(section.level_looks_valid(), "{level:?} 应当合法");
         }
 
-        let invalid = [Some(""), Some("   "), Some("inof"), Some("=debug"), Some("app=")];
+        let invalid = [
+            Some(""),
+            Some("   "),
+            Some("inof"),
+            Some("=debug"),
+            Some("app="),
+        ];
         for level in invalid {
             let section = LogSection {
                 level: level.map(str::to_string),
