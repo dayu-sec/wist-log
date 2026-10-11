@@ -3,7 +3,11 @@
 use std::path::PathBuf;
 
 /// 运行日志的 `[log]` 段（级别 / 格式 / 落点 / 轮转）。
-#[derive(Debug, Clone, Default, serde::Deserialize)]
+///
+/// 这是**唯一事实来源**：各组件把它**直接内嵌**进自己的配置结构（如 `wist-gateway`
+/// `AdminConfig.log`、`wist-center` `CenterConfig.log`、`wist-agentd` `AgentConfig.log`）。
+/// 因此 derive 了 `Serialize` / `PartialEq` / `Eq`，以便内嵌方也能 derive 这些。
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct LogSection {
     /// 过滤器指令：`info`，或 `wist_gateway=debug,hyper=warn` 这种分 target 写法。缺省 `info`。
     #[serde(default)]
@@ -28,7 +32,9 @@ pub struct LogSection {
 }
 
 /// 日志输出格式。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum LogFormat {
     /// `<时间戳> <LEVEL> <target>: <message>`（缺省）。
@@ -36,6 +42,43 @@ pub enum LogFormat {
     Text,
     /// 每行一个 JSON 对象：`{ts, level, target, component, version, msg}`。
     Json,
+}
+
+impl LogSection {
+    /// `level` 是否像合法的过滤器指令。
+    ///
+    /// 只用于在 `init` 时对**明显拼错**的 `level` 说一声：`env_logger` 对无法识别的指令
+    /// 会静默忽略，后果是“配了却一条日志都没有”，极难排查。合法形如 `info`，
+    /// 或分 target 的 `wist_gateway=debug,hyper=warn`（逗号分隔）。
+    pub(crate) fn level_looks_valid(&self) -> bool {
+        let Some(level) = self.level.as_deref() else {
+            return true;
+        };
+        let mut any = false;
+        for directive in level.split(',') {
+            let directive = directive.trim();
+            if directive.is_empty() {
+                continue;
+            }
+            any = true;
+            let (target, threshold) = match directive.rsplit_once('=') {
+                Some((target, threshold)) => (Some(target.trim()), threshold.trim()),
+                None => (None, directive),
+            };
+            if let Some(target) = target
+                && target.is_empty()
+            {
+                return false;
+            }
+            if !matches!(
+                threshold.to_ascii_lowercase().as_str(),
+                "off" | "error" | "warn" | "info" | "debug" | "trace"
+            ) {
+                return false;
+            }
+        }
+        any
+    }
 }
 
 #[cfg(test)]
@@ -76,5 +119,47 @@ mod tests {
         assert!(section.max_bytes.is_none());
         assert!(section.keep_files.is_none());
         assert!(section.max_seconds.is_none());
+    }
+
+    #[test]
+    fn level_validity_flags_typos_and_accepts_the_documented_forms() {
+        let valid = [
+            None,
+            Some("info"),
+            Some("OFF"),
+            Some("wist_gateway=debug,hyper=warn"),
+        ];
+        for level in valid {
+            let section = LogSection {
+                level: level.map(str::to_string),
+                ..Default::default()
+            };
+            assert!(section.level_looks_valid(), "{level:?} 应当合法");
+        }
+
+        let invalid = [Some(""), Some("   "), Some("inof"), Some("=debug"), Some("app=")];
+        for level in invalid {
+            let section = LogSection {
+                level: level.map(str::to_string),
+                ..Default::default()
+            };
+            assert!(!section.level_looks_valid(), "{level:?} 应当被判为可疑");
+        }
+    }
+
+    #[test]
+    fn the_section_round_trips_through_serde() {
+        // 内嵌方（gateway / center / agentd）需要能序列化它：钉住这个能力。
+        let section = LogSection {
+            level: Some("info".to_string()),
+            format: LogFormat::Json,
+            file: Some(std::path::PathBuf::from("/var/log/app.log")),
+            max_bytes: Some(1024),
+            keep_files: Some(2),
+            max_seconds: Some(3600),
+        };
+        let text = serde_json::to_string(&section).expect("serialize");
+        let back: LogSection = serde_json::from_str(&text).expect("deserialize");
+        assert_eq!(back, section);
     }
 }

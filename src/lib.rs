@@ -6,7 +6,8 @@
 //!
 //! - **级别**（`level`）：`RUST_LOG` 环境变量 > `[log].level` > `info`；支持分 target
 //!   （`wist_gateway=debug,hyper=warn`）。
-//! - **格式**（`format`）：`text`（人看）/ `json`（机器看，每行带 `level` 字段供采集端筛）。
+//! - **格式**（`format`）：`text`（人看，`<ts> <LEVEL> <target>: <msg>`）/ `json`（机器看，每行
+//!   `{ts, level, target, component, version, msg}`，`ts` 为 RFC3339 毫秒，`level` 小写供采集端筛）。
 //! - **落点**（`file`）：给了写文件（追加、自动建父目录、**写满轮转**），缺省写 stderr —— 容器里**不要**
 //!   给 `file`，让容器 runtime 收 stderr 并轮转。
 //! - **轮转**：进程内做（`max_bytes` / `keep_files` / `max_seconds`）；自己轮转就**别再挂 logrotate**。
@@ -25,4 +26,3 @@ mod rotate;
 
 pub use config::{LogFormat, LogSection};
 pub use init::{Identity, init};
-pub use rotate::RotationPolicy;

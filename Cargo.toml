@@ -1,6 +1,6 @@
 [package]
 name = "wist-log"
-version = "0.1.0" #@gxl:set(version)
+version = "0.1.1" #@gxl:set(version)
 edition = "2024"
 license = "Apache-2.0"
 authors = ["wist Dev Team"]
@@ -24,5 +24,5 @@ serde_json = "1"
 path = "src/lib.rs"
 
 [dev-dependencies]
-# 测试 `[log]` 段的反序列化。
-toml = "0.8"
+# 测试 `[log]` 段的反序列化。与生态其余 crate 对齐（同一 toml 大版本）。
+toml = "1.1"

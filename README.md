@@ -2,6 +2,15 @@
 
 wist 统一日志输出：`log` 门面 + `env_logger` 后端，级别 / 格式 / 落点 / 轮转由配置的 `[log]` 段决定。
 
+[![crates.io](https://img.shields.io/crates/v/wist-log.svg)](https://crates.io/crates/wist-log)
+[![docs.rs](https://img.shields.io/docsrs/wist-log/latest.svg)](https://docs.rs/wist-log)
+[![Downloads](https://img.shields.io/crates/d/wist-log.svg)](https://crates.io/crates/wist-log)
+[![MSRV](https://img.shields.io/badge/rustc-1.85+-orange.svg)](#)
+[![CI](https://github.com/dayu-sec/wist-log/actions/workflows/ci.yml/badge.svg)](https://github.com/dayu-sec/wist-log/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/dayu-sec/wist-log/branch/main/graph/badge.svg)](https://codecov.io/gh/dayu-sec/wist-log)
+[![dependency status](https://deps.rs/repo/github/dayu-sec/wist-log/status.svg)](https://deps.rs/repo/github/dayu-sec/wist-log)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 **目标**：让 gateway / gwlinkd / center / agentd / exec / upgrader 用**同一套**日志配置键、同一套输出格式、同一套级别语义 —— 想不一致都难。
 
 ## 契约
@@ -18,7 +27,7 @@ wist 统一日志输出：`log` 门面 + `env_logger` 后端，级别 / 格式 /
 | `max_seconds` | 分卷保留秒数（0 = 不按时间清） | 7 天 |
 
 - **优先级**：`RUST_LOG` > `[log].level` > `info`。
-- **格式**：`text` = `<ts> <LEVEL> <target>: <msg>`；`json` = 每行 `{ts, level, target, component, version, msg}`（采集端按 `level` 筛）。
+- **格式**：`text` = `<ts> <LEVEL> <target>: <msg>`（`ts` 为 RFC3339 毫秒）；`json` = 每行 `{ts, level, target, component, version, msg}`（`ts` 毫秒、`level` 小写，供采集端按级别筛）。
 - **落点**：给了 `file` 才写文件（追加、自动建父目录、**进程内轮转**，别再挂 logrotate）；否则写 stderr。
 - **容器里不要给 `file`**：让容器 runtime 收 stderr 并轮转（`docker logging` / journald）。
 
